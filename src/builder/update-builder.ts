@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely"
 import { ValidationError } from "../columns/arktype-config"
-import { ModelNotFoundError } from "../errors/errors"
+import { ModelNotFoundError, normalizeError } from "../errors/errors"
 import type { Model, ModelClass } from "../model/model"
 import type { PetaLike } from "../types"
 
@@ -30,12 +30,19 @@ export class UpdateBuilder<T extends Model> {
       }
     }
 
-    const row = (await this.#kysely
-      .updateTable(this.#modelClass.table)
-      .set(data)
-      .where("id", "=", id)
-      .returningAll()
-      .executeTakeFirst()) as Record<string, unknown> | undefined
+    let row: Record<string, unknown> | undefined
+    try {
+      row = (await this.#kysely
+        .updateTable(this.#modelClass.table)
+        .set(data)
+        .where("id", "=", id)
+        .returningAll()
+        .executeTakeFirst()) as Record<string, unknown> | undefined
+    } catch (e) {
+      const normalized = normalizeError(e, this.#modelClass.table)
+      if (normalized) throw normalized
+      throw e
+    }
 
     if (!row) throw new ModelNotFoundError(this.#modelClass.table, id)
     return this.#modelClass.hydrate(row)

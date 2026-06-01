@@ -212,6 +212,31 @@ await User.transaction(async (trx) => {
 })
 ```
 
+### Error Handling
+
+Database constraint violations (unique, foreign key) are normalized into a `DatabaseError` across SQLite, PostgreSQL, and MySQL:
+
+```ts
+import { DatabaseError } from "peta-orm"
+
+try {
+  const post = await Post.insert({ slug: "my-post", title: "..." })
+} catch (e) {
+  if (e instanceof DatabaseError && e.code === "UNIQUE_CONSTRAINT") {
+    // slug already taken — return 400
+    return c.json({ error: "Slug already taken" }, 400)
+  }
+  throw e
+}
+```
+
+| `DatabaseError.code` | Meaning | Triggered by |
+|---|---|---|
+| `UNIQUE_CONSTRAINT` | Duplicate value on a unique column | `SQLITE_CONSTRAINT_UNIQUE`, PostgreSQL `23505`, MySQL `ER_DUP_ENTRY` |
+| `FOREIGN_KEY_CONSTRAINT` | Referenced row doesn't exist | `SQLITE_CONSTRAINT_FOREIGNKEY`, PostgreSQL `23503`, MySQL `ER_NO_REFERENCED_ROW_2` |
+
+The error also carries the `table` name and the original driver error via `cause`.
+
 ### Collection Utilities
 
 ```ts
@@ -250,7 +275,7 @@ bun run examples/07-soft-deletes.ts
 | 06 | [hooks-timestamps](./examples/06-hooks-timestamps.ts) | beforeCreate, afterCreate, registerTimestamps |
 | 07 | [soft-deletes](./examples/07-soft-deletes.ts) | $delete, $restore, $forceDelete, withTrashed |
 | 08 | [collection-paginator](./examples/08-collection-paginator.ts) | Collection, Paginator |
-| 09 | [hono-integration](./examples/09-hono-integration.ts) | Hono app stub |
+| 09 | [hono-integration](./examples/09-hono-integration.ts) | Hono app + error handling with `DatabaseError` |
 | 10 | [elysia-integration](./examples/10-elysia-integration.ts) | Elysia app stub |
 | 11 | [many-to-many](./examples/11-many-to-many.ts) | ManyToMany via pivot table |
 | 12 | [transactions](./examples/12-transactions.ts) | Model.transaction(), rollback |
@@ -271,7 +296,7 @@ bun run examples/07-soft-deletes.ts
 | **Polymorphic** | `MorphTo`, `MorphMany`, `MorphOne` | `src/relations/Morph.ts` |
 | **Hooks** | `HookManager`, `on()`, `off()`, `trigger()` | `src/hooks/lifecycle.ts` |
 | **Paginator** | `Paginator`, `.paginate()` | `src/pagination/Paginator.ts` |
-| **Errors** | `ModelNotFoundError`, `RelationNotFoundError`, `ValidationError` | `src/errors/errors.ts` |
+| **Errors** | `ModelNotFoundError`, `RelationNotFoundError`, `ValidationError`, `DatabaseError` | `src/errors/errors.ts` |
 
 ---
 

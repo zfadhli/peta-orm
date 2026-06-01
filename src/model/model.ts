@@ -2,7 +2,7 @@ import type { Kysely } from "kysely"
 import { DeleteBuilder, EagerLoader, ModelQueryBuilder, UpdateBuilder } from "../builder"
 import { ValidationError } from "../columns/arktype-config"
 import type { ColumnShape } from "../columns/column"
-import { ModelNotFoundError, ModelNotRegisteredError, RelationNotFoundError } from "../errors/errors"
+import { DatabaseError, ModelNotFoundError, ModelNotRegisteredError, normalizeError, RelationNotFoundError } from "../errors/errors"
 import { HookManager, type LifecycleEvent } from "../hooks/lifecycle"
 import type { Relation } from "../relations/relation"
 import type { PetaLike } from "../types"
@@ -265,7 +265,13 @@ export class Model {
       }
 
       const id = this.#attributes.id
-      await peta.kysely.updateTable(table).set(dirty).where("id", "=", id).execute()
+      try {
+        await peta.kysely.updateTable(table).set(dirty).where("id", "=", id).execute()
+      } catch (e) {
+        const normalized = normalizeError(e, table)
+        if (normalized) throw normalized
+        throw e
+      }
 
       this.#original = { ...this.#attributes }
       await hooks.trigger("afterUpdate", this)
@@ -286,7 +292,14 @@ export class Model {
         }
       }
 
-      const result = await peta.kysely.insertInto(table).values(this.#attributes).executeTakeFirst()
+      let result: any
+      try {
+        result = await peta.kysely.insertInto(table).values(this.#attributes).executeTakeFirst()
+      } catch (e) {
+        const normalized = normalizeError(e, table)
+        if (normalized) throw normalized
+        throw e
+      }
 
       const insertId = (result as { insertId?: number | bigint })?.insertId
       if (insertId !== undefined) {
@@ -313,7 +326,13 @@ export class Model {
 
     await hooks.trigger("beforeDelete", this)
 
-    await peta.kysely.deleteFrom(table).where("id", "=", id).execute()
+    try {
+      await peta.kysely.deleteFrom(table).where("id", "=", id).execute()
+    } catch (e) {
+      const normalized = normalizeError(e, table)
+      if (normalized) throw normalized
+      throw e
+    }
 
     this.#exists = false
     await hooks.trigger("afterDelete", this)
@@ -419,10 +438,17 @@ export class Model {
     const results: T[] = []
     for (const data of dataArray) {
       const instance = this.hydrate(data)
-      const result = await trx
-        .insertInto(this.table)
-        .values(data as Record<string, unknown>)
-        .executeTakeFirst()
+      let result: any
+      try {
+        result = await trx
+          .insertInto(this.table)
+          .values(data as Record<string, unknown>)
+          .executeTakeFirst()
+      } catch (e) {
+        const normalized = normalizeError(e, this.table)
+        if (normalized) throw normalized
+        throw e
+      }
       const insertId = (result as { insertId?: number | bigint })?.insertId
       if (insertId !== undefined) {
         instance.set("id", Number(insertId))
@@ -435,21 +461,21 @@ export class Model {
   static #globalScopes = new WeakMap<object, Map<string, (qb: any) => void>>()
 
   static addGlobalScope(name: string, callback: (qb: any) => void): void {
-    let scopes = Model.#globalScopes.get(Model)
+    let scopes = Model.#globalScopes.get(this)
     if (!scopes) {
       scopes = new Map()
-      Model.#globalScopes.set(Model, scopes)
+      Model.#globalScopes.set(this, scopes)
     }
     scopes.set(name, callback)
   }
 
   static removeGlobalScope(name: string): void {
-    const scopes = Model.#globalScopes.get(Model)
+    const scopes = Model.#globalScopes.get(this)
     scopes?.delete(name)
   }
 
   static getGlobalScopes(): Map<string, (qb: any) => void> {
-    return Model.#globalScopes.get(Model) ?? new Map()
+    return Model.#globalScopes.get(this) ?? new Map()
   }
 
   static registerTimestamps(createdAtColumn: string = "createdAt", updatedAtColumn: string = "updatedAt"): void {
