@@ -288,6 +288,10 @@ bun run examples/07-soft-deletes.ts
 | 14 | [global-scopes](./examples/14-global-scopes.ts) | addGlobalScope(), withoutGlobalScope() |
 | 15 | [batch](./examples/15-batch.ts) | insertMany, insertMany() |
 | 16 | [discover](./examples/16-discover.ts) | peta.discover(), rest params |
+| 17 | [instance-methods](./examples/17-instance-methods.ts) | fill, dirty, reset, $reload, $load, $relatedQuery |
+| 18 | [advanced-queries](./examples/18-advanced-queries.ts) | groupBy/having, sum/avg/min/max, chunk, toSQL, updateMany |
+| 19 | [collections-deep](./examples/19-collections-deep.ts) | full Collection + Paginator API |
+| 20 | [advanced-relations](./examples/20-advanced-relations.ts) | HasManyThrough, polymorphic morphs, pivot extras |
 
 ---
 
