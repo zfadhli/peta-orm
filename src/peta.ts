@@ -1,9 +1,20 @@
 import { type Dialect, Kysely } from "kysely"
+import { resolve } from "path"
 import type { ModelClass } from "./model/model"
 import type { PetaLike } from "./types"
 
 export interface PetaConfig {
   dialect: Dialect
+}
+
+function isModelClass(value: unknown): value is ModelClass {
+  return (
+    typeof value === "function" &&
+    typeof (value as any).table === "string" &&
+    (value as any).table.length > 0 &&
+    typeof (value as any).columns === "object" &&
+    (value as any).columns !== null
+  )
 }
 
 export class Peta implements PetaLike {
@@ -21,9 +32,29 @@ export class Peta implements PetaLike {
     modelClass.peta = this
   }
 
-  registerAll(classes: ModelClass[]): void {
+  registerAll(...classes: ModelClass[]): void {
+    if (classes.length === 1 && Array.isArray(classes[0])) {
+      classes = classes[0]
+    }
     for (const cls of classes) {
       this.register(cls)
+    }
+  }
+
+  async discover(pattern: string): Promise<void> {
+    const bunModule = await import("bun").catch(() => null)
+    const Glob = bunModule?.Glob ?? null
+    if (!Glob) {
+      throw new Error("peta.discover() requires Bun — use peta.registerAll() directly in other runtimes")
+    }
+    for await (const file of new Glob(pattern).scan()) {
+      const abs = resolve(file)
+      const mod = await import(abs)
+      for (const value of Object.values(mod as Record<string, unknown>)) {
+        if (isModelClass(value)) {
+          this.register(value)
+        }
+      }
     }
   }
 

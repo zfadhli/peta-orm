@@ -53,7 +53,12 @@ database.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCRE
 database.run(`CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, title TEXT NOT NULL)`)
 
 const peta = new Peta({ dialect: new BunSqliteDialect({ database }) })
-peta.registerAll([User, Post])
+
+// Explicit registration (rest params, no array wrapper)
+peta.registerAll(User, Post)
+
+// Or auto-discover from directory (Bun only):
+// await peta.discover("./src/**/*.model.ts")
 
 export { peta, User, Post }
 ```
@@ -282,6 +287,7 @@ bun run examples/07-soft-deletes.ts
 | 13 | [casting](./examples/13-casting.ts) | $casts, $hidden, $appends, accessors |
 | 14 | [global-scopes](./examples/14-global-scopes.ts) | addGlobalScope(), withoutGlobalScope() |
 | 15 | [batch](./examples/15-batch.ts) | insertMany, insertMany() |
+| 16 | [discover](./examples/16-discover.ts) | peta.discover(), rest params |
 
 ---
 
@@ -290,6 +296,7 @@ bun run examples/07-soft-deletes.ts
 | Module | Key exports | File |
 |--------|-------------|------|
 | **Core** | `Peta`, `Model`, `$t`, `Collection` | `src/index.ts` |
+| **Discovery** | `peta.discover(glob)`, `peta.registerAll(...models)` | `src/peta.ts` |
 | **Columns** | `t.integer()`, `t.string()`, `t.email()`, `.min()`, `.max()`, `.nullable()`, `.default()` | `src/columns/column-types.ts` |
 | **Builders** | `.where()`, `.with()`, `.paginate()`, `.chunk()`, `.sum()`, `.toSQL()` | `src/builder/query-builder.ts` |
 | **Relations** | `HasMany`, `BelongsTo`, `HasOne`, `ManyToMany`, `HasManyThrough` | `src/relations/Relation.ts` |

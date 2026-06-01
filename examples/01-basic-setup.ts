@@ -19,7 +19,7 @@ const database = new Database(":memory:")
 database.run("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)")
 
 const peta = new Peta({ dialect: new BunSqliteDialect({ database }) })
-peta.registerAll([User])
+peta.registerAll(User)
 
 const user = await User.insert({ name: "Alice" })
 console.log("Created:", user.$toJSON())
