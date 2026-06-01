@@ -276,7 +276,7 @@ bun run examples/07-soft-deletes.ts
 | 02 | [model-definition](./examples/02-model-definition.ts) | Columns, types, modifiers, timestamps |
 | 03 | [crud](./examples/03-crud.ts) | insert, find, update, delete, paginate |
 | 04 | [relations](./examples/04-relations.ts) | HasMany, BelongsTo, HasOne, eager loading |
-| 05 | [query-builder](./examples/05-query-builder.ts) | where, orderBy, join, has, count |
+| 05 | [query-builder](./examples/05-query-builder.ts) | where, orderBy, join, has, whereHas, whereDoesntHave, count |
 | 06 | [hooks-timestamps](./examples/06-hooks-timestamps.ts) | beforeCreate, afterCreate, registerTimestamps |
 | 07 | [soft-deletes](./examples/07-soft-deletes.ts) | $delete, $restore, $forceDelete, withTrashed |
 | 08 | [collection-paginator](./examples/08-collection-paginator.ts) | Collection, Paginator |

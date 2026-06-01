@@ -1,5 +1,5 @@
 // Peta ORM — 05-query-builder
-// where, orderBy, limit, offset, innerJoin, has, count
+// where, orderBy, limit, offset, innerJoin, has, whereHas, whereDoesntHave, count
 
 import { Database } from "bun:sqlite"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
@@ -53,6 +53,17 @@ console.log(
   "Users with posts:",
   withPosts.map((u: any) => u.get("name")),
 )
+
+// whereHas — filter with constraints on the related query
+const withPublished = await User.query()
+  .whereHas("posts", (q) => q.where("published", "=", 1))
+  .orderBy("id", "asc")
+  .execute()
+console.log("Users with published posts:", withPublished.map((u: any) => u.get("name")))
+
+// whereDoesntHave — exclude by relation existence
+const withoutPosts = await User.query().whereDoesntHave("posts").execute()
+console.log("Users without posts:", withoutPosts.map((u: any) => u.get("name")))
 
 // count
 const total = await Post.query().count()
