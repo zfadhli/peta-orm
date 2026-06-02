@@ -200,6 +200,11 @@ await User.delete(1)
 // Paginate
 const page = await Post.query().orderBy("id", "asc").paginate(1, 20)
 // → { data: Post[], total, perPage, currentPage, lastPage, hasMorePages }
+
+// Query results are plain T[] — standard, zero overhead
+const posts = await Post.query().where("published", true).execute()
+// posts: Post[]
+posts[0] // direct index access
 ```
 
 ### Hooks & Timestamps
@@ -308,9 +313,13 @@ The error also carries the `table` name and the original driver error via `cause
 ### Collection Utilities
 
 ```ts
+// .execute() returns a plain array — lightweight, direct index access
 const users = await User.query().execute()
-const col = new Collection(users)
+users[0]    // direct access
 
+// .collect() returns a Collection with convenience methods
+const col = await User.query().orderBy("id", "asc").collect()
+col.toJSON()            // all items serialized in one call
 col.pluck("name")       // ["Alice", "Bob"]
 col.groupBy("role")     // { admin: [...], user: [...] }
 col.load("posts")       // eager load relations
@@ -319,6 +328,8 @@ col.avg("age")
 col.unique("role")
 col.sortBy("name")
 col.chunk(10)           // split into batches
+col.first()             // first element
+col.at(0)               // same as [0] on plain arrays
 ```
 
 ---
