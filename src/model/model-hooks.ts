@@ -32,38 +32,22 @@ export function registerTimestampsFor(
   })
 }
 
+export interface SoftDeleteConfig {
+  column: string
+}
+
+const SD_CONFIG = new WeakMap<object, SoftDeleteConfig>()
+
+export function getSoftDeleteConfig(modelClass: object): SoftDeleteConfig | null {
+  return SD_CONFIG.get(modelClass) ?? null
+}
+
 export function registerSoftDeletesFor(modelClass: ModelClass, deletedAtColumn: string = "deletedAt"): void {
-  const cls = modelClass as any
-  if (SD_SET.has(cls)) return
-  SD_SET.add(cls)
+  if (SD_CONFIG.has(modelClass)) return
+  SD_CONFIG.set(modelClass, { column: deletedAtColumn })
 
-  const origDelete = cls.prototype.$delete
-
-  cls.prototype.$delete = async function () {
-    const hooks = cls.hooks as HookManager
-    await hooks.trigger("beforeDelete", this)
-    this.set(deletedAtColumn, new Date().toISOString())
-    await this.$save()
-    await hooks.trigger("afterDelete", this)
-  }
-
-  cls.prototype.$forceDelete = async function () {
-    const hooks = cls.hooks as HookManager
-    await hooks.trigger("beforeForceDelete", this)
-    await origDelete.call(this)
-    await hooks.trigger("afterForceDelete", this)
-  }
-
-  cls.prototype.$restore = async function () {
-    const hooks = cls.hooks as HookManager
-    await hooks.trigger("beforeRestore", this)
-    this.set(deletedAtColumn, null)
-    await this.$save()
-    await hooks.trigger("afterRestore", this)
-  }
-
-  cls.prototype.$trashed = function () {
-    const val = this.get(deletedAtColumn)
-    return val !== null && val !== undefined
-  }
+  modelClass.on("beforeRestore", () => {})
+  modelClass.on("afterRestore", () => {})
+  modelClass.on("beforeForceDelete", () => {})
+  modelClass.on("afterForceDelete", () => {})
 }

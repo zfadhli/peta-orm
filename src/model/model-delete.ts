@@ -1,10 +1,23 @@
 import type { Kysely } from "kysely"
 import { ModelNotFoundError, ModelNotRegisteredError, normalizeError } from "../errors/errors"
 import type { Model, ModelClass } from "./model"
-import { getAttr, getExists, getState, setExists, setAttr } from "./model-state"
+import { getAttr, getState, setExists } from "./model-state"
 import { saveModel } from "./model-save"
+import { getSoftDeleteConfig } from "./model-hooks"
 
 export async function deleteModel(model: Model): Promise<void> {
+  const modelClass = model.constructor as ModelClass
+  const sd = getSoftDeleteConfig(modelClass)
+
+  if (sd) {
+    await softDeleteModel(model, sd.column)
+    return
+  }
+
+  await hardDeleteModel(model)
+}
+
+async function hardDeleteModel(model: Model): Promise<void> {
   const modelClass = model.constructor as ModelClass
   const hooks = modelClass.hooks
   const peta = modelClass.peta
@@ -27,22 +40,48 @@ export async function deleteModel(model: Model): Promise<void> {
   await hooks.trigger("afterDelete", model)
 }
 
+async function softDeleteModel(model: Model, column: string): Promise<void> {
+  const modelClass = model.constructor as ModelClass
+  const hooks = modelClass.hooks
+
+  await hooks.trigger("beforeDelete", model)
+  model.set(column, new Date().toISOString())
+  await saveModel(model)
+  await hooks.trigger("afterDelete", model)
+}
+
 export async function forceDeleteModel(model: Model): Promise<void> {
-  const hooks = (model.constructor as ModelClass).hooks
+  const modelClass = model.constructor as ModelClass
+  const hooks = modelClass.hooks
+  const sd = getSoftDeleteConfig(modelClass)
+
   await hooks.trigger("beforeForceDelete", model)
-  await deleteModel(model)
+  if (sd) {
+    await hardDeleteModel(model)
+  } else {
+    await hardDeleteModel(model)
+  }
   await hooks.trigger("afterForceDelete", model)
 }
 
 export async function restoreModel(model: Model): Promise<void> {
-  const hooks = (model.constructor as ModelClass).hooks
+  const modelClass = model.constructor as ModelClass
+  const sd = getSoftDeleteConfig(modelClass)
+  if (!sd) return
+
+  const hooks = modelClass.hooks
   await hooks.trigger("beforeRestore", model)
+  model.set(sd.column, null)
   await saveModel(model)
   await hooks.trigger("afterRestore", model)
 }
 
 export function trashedModel(model: Model): boolean {
-  return false
+  const modelClass = model.constructor as ModelClass
+  const sd = getSoftDeleteConfig(modelClass)
+  if (!sd) return false
+  const val = model.get(sd.column)
+  return val !== null && val !== undefined
 }
 
 export async function reloadModel(model: Model): Promise<Model> {
