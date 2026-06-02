@@ -349,7 +349,7 @@ bun run bin/peta migrate:status
 | 05 | [query-builder](./examples/05-query-builder.ts) | where, orderBy, join, has, whereHas, whereDoesntHave, count |
 | 06 | [hooks-timestamps](./examples/06-hooks-timestamps.ts) | beforeCreate, afterCreate, registerTimestamps |
 | 07 | [soft-deletes](./examples/07-soft-deletes.ts) | $delete, $restore, $forceDelete, withTrashed |
-| 08 | [collection-paginator](./examples/08-collection-paginator.ts) | Collection, Paginator |
+| 08 | [collection-paginator](./examples/08-collection-paginator.ts) | Collection, Paginator, `.collect()` |
 | 09 | [hono-integration](./examples/09-hono-integration.ts) | Hono app + error handling with `DatabaseError` |
 | 10 | [elysia-integration](./examples/10-elysia-integration.ts) | Elysia app stub |
 | 11 | [many-to-many](./examples/11-many-to-many.ts) | ManyToMany via pivot table |
@@ -373,7 +373,7 @@ bun run bin/peta migrate:status
 | **Core** | `Peta`, `Model`, `$t`, `Collection` | `src/index.ts` |
 | **Discovery** | `peta.discover(glob)`, `peta.registerAll(...models)` | `src/peta.ts` |
 | **Columns** | `t.integer()`, `t.string()`, `t.email()`, `.min()`, `.max()`, `.nullable()`, `.default()` | `src/columns/column-types.ts` |
-| **Builders** | `.where()`, `.with()`, `.paginate()`, `.chunk()`, `.sum()`, `.toSQL()`, `.when()`, `.unless()` | `src/builder/query-builder.ts` |
+| **Builders** | `.where()`, `.with()`, `.paginate()`, `.chunk()`, `.sum()`, `.toSQL()`, `.when()`, `.unless()`, `.collect()` | `src/builder/query-builder.ts` |
 | **Relations** | `HasMany`, `BelongsTo`, `HasOne`, `ManyToMany`, `HasManyThrough` | `src/relations/Relation.ts` |
 | **Polymorphic** | `MorphTo`, `MorphMany`, `MorphOne` | `src/relations/Morph.ts` |
 | **Hooks** | `HookManager`, `on()`, `off()`, `trigger()` | `src/hooks/lifecycle.ts` |

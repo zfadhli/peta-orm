@@ -3,6 +3,7 @@ import { ModelNotFoundError, RelationNotFoundError } from "../errors/errors"
 import type { Model, ModelClass } from "../model/model"
 import type { PetaLike } from "../types"
 import { type EagerLoad, EagerLoader, type WithArg } from "./eager-loader"
+import type { Collection } from "../collection/collection"
 
 const SAFE_COL = /^[a-zA-Z_][a-zA-Z0-9_.]*$/
 
@@ -81,6 +82,12 @@ export class ModelQueryBuilder<T extends Model> {
       }
     }
     return models
+  }
+
+  async collect(): Promise<Collection<T>> {
+    const items = await this.execute()
+    const { Collection: Col } = await import("../collection/collection")
+    return new Col(items)
   }
 
   async executeTakeFirst(): Promise<T | undefined> {

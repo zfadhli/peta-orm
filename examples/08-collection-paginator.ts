@@ -1,5 +1,6 @@
 // Peta ORM — 08-collection-paginator
 // Collection methods (pluck, groupBy, keyBy, first, last, isEmpty)
+// collect() — query results as Collection
 // Paginator (paginate, hasMorePages, perPage, total)
 
 import { Database } from "bun:sqlite"
@@ -37,6 +38,12 @@ console.log("Grouped by role:", JSON.stringify(Object.keys(col.groupBy("role")))
 console.log("Keyed:", Object.keys(col.keyBy("name")).length, "entries")
 console.log("Is empty:", col.isEmpty())
 console.log("Names via get():", col.get("name"))
+
+// collect() — query results directly as Collection
+const collected = await User.query().orderBy("id", "asc").collect()
+console.log("\ncollect().toJSON():", collected.toJSON())
+console.log("collect().pluck('name'):", collected.pluck("name"))
+console.log("collect().first()?.get('name'):", collected.first()?.get("name"))
 
 // Paginator
 const page1 = await User.query().orderBy("id", "asc").paginate(1, 3)
