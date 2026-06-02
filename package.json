@@ -12,6 +12,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./migrator": {
+      "import": "./dist/migrations/index.js",
+      "types": "./dist/migrations/index.d.ts"
     }
   },
   "files": [
@@ -37,7 +41,7 @@
     "test": "bun test",
     "test:all": "for f in test/*.ts; do echo === $f ===; bun test $f || exit 1; done",
     "typecheck": "bun x tsc --noEmit",
-    "build:js": "bun build ./src/index.ts --outdir ./dist --target bun --format esm",
+    "build:js": "bun build ./src/index.ts ./src/migrations/index.ts --outdir ./dist --target bun --format esm --splitting",
     "build:types": "bun x tsc -p tsconfig.build.json",
     "build": "bun run build:js && bun run build:types",
     "lint": "bunx biome check src test examples",
