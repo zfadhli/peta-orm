@@ -18,24 +18,30 @@
       "types": "./dist/migrations/index.d.ts"
     }
   },
+  "bin": {
+    "peta": "./bin/peta"
+  },
   "files": [
+    "bin/",
     "dist/",
     "README.md",
     "LICENSE"
   ],
   "dependencies": {
-    "arktype": "^2.2.0"
+    "arktype": "^2.2.0",
+    "cac": "^7.0.0",
+    "ora": "^9.4.0"
   },
   "peerDependencies": {
     "kysely": "^0.27.0",
     "typescript": "^6.0.0"
-    },
-    "devDependencies": {
-      "@biomejs/biome": "^2.4.16",
-      "@types/bun": "latest",
-      "kysely": "^0.27.0",
-      "kysely-bun-sqlite": "^0.4.0",
-      "typescript": "^6.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.16",
+    "@types/bun": "latest",
+    "kysely": "^0.27.0",
+    "kysely-bun-sqlite": "^0.4.0",
+    "typescript": "^6.0.0"
   },
   "scripts": {
     "test": "bun test",

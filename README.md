@@ -285,6 +285,13 @@ All self-contained (inline SQLite, run directly):
 bun run examples/01-basic-setup.ts
 bun run examples/04-relations.ts
 bun run examples/07-soft-deletes.ts
+
+# CLI — manage migrations
+bun run bin/peta --help
+bun run bin/peta migrate:init
+bun run bin/peta migrate:generate CreateUsers
+bun run bin/peta migrate:up
+bun run bin/peta migrate:status
 ```
 
 | # | Example | Topic |
@@ -309,7 +316,7 @@ bun run examples/07-soft-deletes.ts
 | 18 | [advanced-queries](./examples/18-advanced-queries.ts) | groupBy/having, sum/avg/min/max, chunk, toSQL, updateMany |
 | 19 | [collections-deep](./examples/19-collections-deep.ts) | full Collection + Paginator API |
 | 20 | [advanced-relations](./examples/20-advanced-relations.ts) | HasManyThrough, polymorphic morphs, pivot extras |
-| 21 | [migrations](./examples/21-migrations.ts) | MigrationRunner, MigrationGenerator |
+| 21 | [migrations](./examples/21-migrations.ts) | MigrationRunner, MigrationGenerator, CLI |
 
 ---
 
@@ -326,7 +333,7 @@ bun run examples/07-soft-deletes.ts
 | **Hooks** | `HookManager`, `on()`, `off()`, `trigger()` | `src/hooks/lifecycle.ts` |
 | **Paginator** | `Paginator`, `.paginate()` | `src/pagination/Paginator.ts` |
 | **Errors** | `ModelNotFoundError`, `RelationNotFoundError`, `ValidationError`, `DatabaseError` | `src/errors/errors.ts` |
-| **Migrations** | `MigrationRunner`, `MigrationGenerator` | `src/migrations/index.ts` (import from `peta-orm/migrator`) |
+| **Migrations** | `MigrationRunner`, `MigrationGenerator`, `defineConfig`, CLI (`peta migrate:*`) | `src/migrations/index.ts` (import from `peta-orm/migrator`) |
 
 ---
 
