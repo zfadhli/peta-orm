@@ -3,6 +3,7 @@
 
 import { Database } from "bun:sqlite"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
+import type { ColumnShape } from "../src"
 import { $t, ArkTypeSchemaConfig, Model, Peta } from "../src"
 
 const t = $t({ schema: new ArkTypeSchemaConfig() })
@@ -12,17 +13,17 @@ class User extends Model {
   static override columns = {
     id: t.integer().primaryKey(),
     name: t.string(255).min(2),
-    email: t.text().email(),
+    email: t.text().email().unique(),
     age: t.integer().nullable().min(0).max(150).default(0),
     role: t.enum("admin", "user").default("user"),
     score: t.double().nullable(),
     ...t.timestamps(),
-  }
+  } satisfies ColumnShape
 }
 
 const database = new Database(":memory:")
 database.run(
-  "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, age INTEGER DEFAULT 0, role TEXT DEFAULT 'user', score REAL, createdAt TEXT, updatedAt TEXT)",
+  "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, age INTEGER DEFAULT 0, role TEXT DEFAULT 'user', score REAL, createdAt TEXT, updatedAt TEXT)",
 )
 
 const peta = new Peta({ dialect: new BunSqliteDialect({ database }) })

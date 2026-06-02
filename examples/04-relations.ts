@@ -3,30 +3,45 @@
 
 import { Database } from "bun:sqlite"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
+import type { ColumnShape } from "../src"
 import { $t, ArkTypeSchemaConfig, BelongsTo, HasMany, HasOne, Model, Peta } from "../src"
 
 const t = $t({ schema: new ArkTypeSchemaConfig() })
 
 class Post extends Model {
   static override table = "posts"
-  static override columns = { id: t.integer().primaryKey(), userId: t.integer(), title: t.string(255) }
+  static override columns = {
+    id: t.integer().primaryKey(),
+    userId: t.integer().references(() => User, ["id"]),
+    title: t.string(255),
+  } satisfies ColumnShape
   static override relations = { author: new BelongsTo(() => User, { foreignKey: "userId" }) }
 }
 
 class Profile extends Model {
   static override table = "profiles"
-  static override columns = { id: t.integer().primaryKey(), userId: t.integer(), bio: t.text().nullable() }
+  static override columns = {
+    id: t.integer().primaryKey(),
+    userId: t.integer().references(() => User, ["id"]),
+    bio: t.text().nullable(),
+  } satisfies ColumnShape
   static override relations = { user: new BelongsTo(() => User, { foreignKey: "userId" }) }
 }
 
 class Tag extends Model {
   static override table = "tags"
-  static override columns = { id: t.integer().primaryKey(), name: t.string(255) }
+  static override columns = {
+    id: t.integer().primaryKey(),
+    name: t.string(255),
+  } satisfies ColumnShape
 }
 
 class User extends Model {
   static override table = "users"
-  static override columns = { id: t.integer().primaryKey(), name: t.string(255) }
+  static override columns = {
+    id: t.integer().primaryKey(),
+    name: t.string(255),
+  } satisfies ColumnShape
   static override relations = {
     posts: new HasMany(() => Post, { foreignKey: "userId" }),
     profile: new HasOne(() => Profile, { foreignKey: "userId" }),

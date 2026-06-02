@@ -23,6 +23,7 @@ bun add -d kysely-bun-sqlite
 // db.ts
 import { Database } from "bun:sqlite"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
+import type { ColumnShape } from "peta-orm"
 import { Peta, $t, ArkTypeSchemaConfig, Model, HasMany } from "peta-orm"
 
 const t = $t({ schema: new ArkTypeSchemaConfig() })
@@ -32,8 +33,8 @@ class User extends Model {
   static override columns = {
     id: t.integer().primaryKey(),
     name: t.string(255).min(2),
-    email: t.text().email(),
-  }
+    email: t.text().email().unique(),
+  } satisfies ColumnShape
   static override relations = {
     posts: new HasMany(() => Post),
   }
@@ -43,9 +44,9 @@ class Post extends Model {
   static override table = "posts"
   static override columns = {
     id: t.integer().primaryKey(),
-    userId: t.integer(),
+    userId: t.integer().references(() => User, ["id"]),
     title: t.string(255),
-  }
+  } satisfies ColumnShape
 }
 
 const database = new Database("my-app.db")
@@ -88,18 +89,30 @@ export { peta, User, Post }
 ### Column Types & Validation
 
 ```ts
+import type { ColumnShape } from "peta-orm"
+
 const t = $t({ schema: new ArkTypeSchemaConfig() })
 
 class User extends Model {
   static override columns = {
     id: t.integer().primaryKey(),
     name: t.string(255).min(2),          // min length
-    email: t.text().email(),             // email format
+    email: t.text().email().unique(),    // email format + unique constraint
     age: t.integer().nullable().min(0).max(150).default(0),
     role: t.enum("admin", "user").default("user"),
     score: t.double().nullable(),
     ...t.timestamps(),                   // createdAt, updatedAt
-  }
+  } satisfies ColumnShape
+}
+
+class Post extends Model {
+  static override columns = {
+    id: t.integer().primaryKey(),
+    userId: t.integer().references(() => User, ["id"]),  // foreign key
+    title: t.string(255),
+    slug: t.string().unique(),
+    published: t.boolean().default(false),
+  } satisfies ColumnShape
 }
 ```
 

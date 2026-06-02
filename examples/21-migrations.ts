@@ -3,19 +3,33 @@
 
 import { Database } from "bun:sqlite"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
-import { $t, ArkTypeSchemaConfig, Model, Peta } from "../src"
+import type { ColumnShape } from "../src"
+import { $t, ArkTypeSchemaConfig, HasMany, Model, Peta } from "../src"
 import { MigrationGenerator, MigrationRunner } from "../src/migrations"
 
 const t = $t({ schema: new ArkTypeSchemaConfig() })
 
-// Define a model
 class User extends Model {
   static override table = "users"
   static override columns = {
     id: t.integer().primaryKey(),
     name: t.string(255),
     email: t.text().unique(),
+  } satisfies ColumnShape
+  static override relations = {
+    posts: new HasMany(() => Post, { foreignKey: "userId" }),
   }
+}
+
+class Post extends Model {
+  static override table = "posts"
+  static override columns = {
+    id: t.integer().primaryKey(),
+    userId: t.integer().references(() => User, ["id"]),
+    title: t.string(255),
+    slug: t.string().unique(),
+    body: t.text().nullable(),
+  } satisfies ColumnShape
 }
 
 const database = new Database(":memory:")

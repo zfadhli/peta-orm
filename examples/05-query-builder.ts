@@ -3,6 +3,7 @@
 
 import { Database } from "bun:sqlite"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
+import type { ColumnShape } from "../src"
 import { $t, ArkTypeSchemaConfig, HasMany, Model, Peta } from "../src"
 
 const t = $t({ schema: new ArkTypeSchemaConfig() })
@@ -11,15 +12,15 @@ class Post extends Model {
   static override table = "posts"
   static override columns = {
     id: t.integer().primaryKey(),
-    userId: t.integer(),
+    userId: t.integer().references(() => User, ["id"]),
     title: t.string(255),
     published: t.integer().default(0),
-  }
+  } satisfies ColumnShape
 }
 
 class User extends Model {
   static override table = "users"
-  static override columns = { id: t.integer().primaryKey(), name: t.string(255) }
+  static override columns = { id: t.integer().primaryKey(), name: t.string(255) } satisfies ColumnShape
   static override relations = { posts: new HasMany(() => Post, { foreignKey: "userId" }) }
 }
 
