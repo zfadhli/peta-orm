@@ -1,5 +1,5 @@
 export type { WithArg } from "./builder"
-export { DeleteBuilder, EagerLoader, InsertBuilder, ModelQueryBuilder, UpdateBuilder } from "./builder"
+export { DeleteBuilder, EagerLoader, ModelQueryBuilder, UpdateBuilder } from "./builder"
 export { Collection } from "./collection/collection"
 export { ArkTypeSchemaConfig } from "./columns/arktype-config"
 export type { ColumnShape, ColumnValue } from "./columns/column"
