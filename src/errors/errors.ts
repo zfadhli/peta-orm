@@ -1,6 +1,11 @@
-import { ValidationError } from "../columns/arktype-config"
-
-export { ValidationError }
+export class ValidationError extends Error {
+  readonly errors: unknown
+  constructor(message: string, errors?: unknown) {
+    super(message)
+    this.name = "ValidationError"
+    this.errors = errors
+  }
+}
 
 export class ModelNotFoundError extends Error {
   readonly modelClass?: string

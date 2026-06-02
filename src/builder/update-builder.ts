@@ -1,5 +1,5 @@
 import type { Kysely } from "kysely"
-import { ValidationError } from "../columns/arktype-config"
+import { ValidationError } from "../errors/errors"
 import { ModelNotFoundError, normalizeError } from "../errors/errors"
 import type { Model, ModelClass } from "../model/model"
 import type { PetaLike } from "../types"

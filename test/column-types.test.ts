@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test"
-import { ArkTypeSchemaConfig, ValidationError } from "../src/columns/arktype-config"
+import { ArkTypeSchemaConfig } from "../src/columns/arktype-config"
+import { ValidationError } from "../src/errors/errors"
 import { $t } from "../src/columns/column-types"
 
 const t = $t({ schema: new ArkTypeSchemaConfig() })

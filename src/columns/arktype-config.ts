@@ -1,14 +1,6 @@
 import { type as arktype } from "arktype"
 import type { Constraint, SchemaConfig } from "./schema-config"
-
-export class ValidationError extends Error {
-  readonly errors: unknown
-  constructor(message: string, errors?: unknown) {
-    super(message)
-    this.name = "ValidationError"
-    this.errors = errors
-  }
-}
+import { ValidationError } from "../errors/errors"
 
 export class ArkTypeSchemaConfig implements SchemaConfig {
   compile(dataType: string, args: unknown[], constraints: Constraint[]): unknown {

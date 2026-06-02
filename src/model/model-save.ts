@@ -1,5 +1,5 @@
 import type { Kysely } from "kysely"
-import { ValidationError } from "../columns/arktype-config"
+import { ValidationError } from "../errors/errors"
 import type { Column } from "../columns/column"
 import { DatabaseError, ModelNotRegisteredError, normalizeError } from "../errors/errors"
 import type { HookManager } from "../hooks/lifecycle"
