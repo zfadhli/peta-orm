@@ -163,13 +163,24 @@ describe("MigrationRunner", () => {
 
 describe("MigrationGenerator", () => {
   it("generates create table for registered models", () => {
+    // Add a Comment model that references Post
+    class Comment extends Model {
+      static override table = "comments"
+      static override columns = {
+        id: t.integer().primaryKey(),
+        postId: t.integer().references(() => Post, ["id"]),
+        body: t.text(),
+      }
+    }
+
     const peta = new Peta({ dialect: new BunSqliteDialect({ database: new Database(":memory:") }) })
-    peta.registerAll(User, Post)
+    peta.registerAll(User, Post, Comment)
     const gen = new MigrationGenerator()
     const code = gen.generateInitialMigration(peta.models)
 
     expect(code).toContain('createTable("users")')
     expect(code).toContain('createTable("posts")')
+    expect(code).toContain('createTable("comments")')
     expect(code).toContain("autoIncrement()")
     expect(code).toContain("primaryKey()")
     expect(code).toContain("notNull()")
@@ -180,8 +191,12 @@ describe("MigrationGenerator", () => {
     expect(code).toContain('"email"')
     expect(code).toContain('"age"')
 
+    // Verify references constraint is generated
+    expect(code).toContain('references("posts.id")')
+
     expect(code).toContain('dropTable("users")')
     expect(code).toContain('dropTable("posts")')
+    expect(code).toContain('dropTable("comments")')
   })
 
   it("generated migration is syntactically valid when run", async () => {
