@@ -239,6 +239,52 @@ describe("Query Builder", () => {
 
     expect(User.query().where("id", "=", 9999).executeTakeFirstOrThrow()).rejects.toThrow()
   })
+
+  it("when applies callback on truthy condition", async () => {
+    const users = await User.query()
+      .when(true, (q) => q.where("name", "like", "%Alice%"))
+      .execute()
+    expect(users.length).toBeGreaterThan(0)
+    for (const u of users) {
+      expect((u.get("name") as string).toLowerCase()).toContain("alice")
+    }
+  })
+
+  it("when skips callback on falsy condition", async () => {
+    const users = await User.query()
+      .when(false, (q) => q.where("name", "=", "NonExistent"))
+      .execute()
+    expect(users.length).toBeGreaterThan(0)
+  })
+
+  it("unless applies callback on falsy condition", async () => {
+    const users = await User.query()
+      .unless(false, (q) => q.where("name", "like", "%Alice%"))
+      .execute()
+    expect(users.length).toBeGreaterThan(0)
+    for (const u of users) {
+      expect((u.get("name") as string).toLowerCase()).toContain("alice")
+    }
+  })
+
+  it("unless skips callback on truthy condition", async () => {
+    const users = await User.query()
+      .unless(true, (q) => q.where("name", "=", "NonExistent"))
+      .execute()
+    expect(users.length).toBeGreaterThan(0)
+  })
+
+  it("chains when and unless together", async () => {
+    const sortCol = "name"
+    // when applies orderBy(name), unless is skipped because sortCol is truthy
+    const users = await User.query()
+      .when(sortCol, (q) => q.orderBy(sortCol, "asc"))
+      .unless(sortCol, (q) => q.orderBy("id", "asc"))
+      .execute()
+    expect(users.length).toBeGreaterThan(0)
+    const names = users.map((u) => u.get("name") as string)
+    expect([...names].sort()).toEqual(names)
+  })
 })
 
 describe("Pagination", () => {

@@ -217,6 +217,23 @@ await User.transaction(async (trx) => {
 })
 ```
 
+### Conditional Chaining
+
+```ts
+const posts = await Post.query()
+  .where("published", "=", published ?? 1)
+  .when(sort?.length, (q) => {
+    for (const s of sort) {
+      q.orderBy(s.replace(/^-/, ""), s.startsWith("-") ? "desc" : "asc")
+    }
+    return q
+  })
+  .unless(sort?.length, (q) => q.orderBy("createdAt", "desc"))
+  .execute()
+```
+
+Both `.when(condition, fn)` and `.unless(condition, fn)` return the query builder, keeping the chain intact. If the condition is truthy, `.when()` applies the callback; `.unless()` does the opposite.
+
 ### Error Handling
 
 Database constraint violations (unique, foreign key) are normalized into a `DatabaseError` across SQLite, PostgreSQL, and MySQL:
@@ -302,7 +319,7 @@ bun run examples/07-soft-deletes.ts
 | **Core** | `Peta`, `Model`, `$t`, `Collection` | `src/index.ts` |
 | **Discovery** | `peta.discover(glob)`, `peta.registerAll(...models)` | `src/peta.ts` |
 | **Columns** | `t.integer()`, `t.string()`, `t.email()`, `.min()`, `.max()`, `.nullable()`, `.default()` | `src/columns/column-types.ts` |
-| **Builders** | `.where()`, `.with()`, `.paginate()`, `.chunk()`, `.sum()`, `.toSQL()` | `src/builder/query-builder.ts` |
+| **Builders** | `.where()`, `.with()`, `.paginate()`, `.chunk()`, `.sum()`, `.toSQL()`, `.when()`, `.unless()` | `src/builder/query-builder.ts` |
 | **Relations** | `HasMany`, `BelongsTo`, `HasOne`, `ManyToMany`, `HasManyThrough` | `src/relations/Relation.ts` |
 | **Polymorphic** | `MorphTo`, `MorphMany`, `MorphOne` | `src/relations/Morph.ts` |
 | **Hooks** | `HookManager`, `on()`, `off()`, `trigger()` | `src/hooks/lifecycle.ts` |
