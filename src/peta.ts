@@ -7,7 +7,7 @@ export interface PetaConfig {
   dialect: Dialect
 }
 
-function isModelClass(value: unknown): value is ModelClass {
+export function isModelClass(value: unknown): value is ModelClass {
   return (
     typeof value === "function" &&
     typeof (value as any).table === "string" &&

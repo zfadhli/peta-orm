@@ -19,7 +19,7 @@ export interface MigrationStatus {
 
 export interface PetaMigrateConfig {
   migrationsDir: string
-  models: ModelClass[]
+  models: ModelClass[] | string
 }
 
 export interface ResolvedConfig {

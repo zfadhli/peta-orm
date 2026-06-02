@@ -4,11 +4,46 @@ import { BunSqliteDialect } from "kysely-bun-sqlite"
 import { readdirSync } from "fs"
 import { resolve } from "path"
 import type { ModelClass } from "../model/model"
-import { Peta } from "../peta"
+import { isModelClass, Peta } from "../peta"
 import type { MigrationFile, PetaMigrateConfig, ResolvedConfig } from "./types"
 
 export function defineConfig(config: PetaMigrateConfig): PetaMigrateConfig {
   return config
+}
+
+function hasGlob(s: string): boolean {
+  return /[*?]/.test(s)
+}
+
+async function resolveModels(models: PetaMigrateConfig["models"]): Promise<ModelClass[]> {
+  if (Array.isArray(models)) return models
+
+  const resolved: ModelClass[] = []
+  const bunModule = await import("bun").catch(() => null)
+  const Glob = bunModule?.Glob ?? null
+  if (!Glob) throw new Error("String models pattern requires Bun")
+
+  // Try as glob pattern
+  let matched = false
+  for await (const file of new Glob(models).scan()) {
+    matched = true
+    const mod = await import(resolve(file))
+    for (const value of Object.values(mod as Record<string, unknown>)) {
+      if (isModelClass(value)) resolved.push(value)
+    }
+  }
+
+  // If no glob matches, try as exact file path (e.g. barrel file)
+  if (!matched) {
+    try {
+      const mod = await import(resolve(models))
+      for (const value of Object.values(mod as Record<string, unknown>)) {
+        if (isModelClass(value)) resolved.push(value)
+      }
+    } catch {}
+  }
+
+  return resolved
 }
 
 export async function loadConfig(): Promise<ResolvedConfig> {
@@ -40,7 +75,9 @@ export async function loadConfig(): Promise<ResolvedConfig> {
 
   const db = new Database(":memory:")
   const peta = new Peta({ dialect: new BunSqliteDialect({ database: db }) })
-  peta.registerAll(...config.models)
+
+  const models = await resolveModels(config.models)
+  peta.registerAll(...models)
 
   return {
     peta,
