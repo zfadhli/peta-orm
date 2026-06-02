@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite"
 import { afterAll, beforeAll, describe, expect, it } from "bun:test"
 import { Kysely } from "kysely"
+import { ManyToMany } from "../src/relations/relation"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
 import { ArkTypeSchemaConfig } from "../src/columns/arktype-config"
 import { $t } from "../src/columns/column-types"
@@ -197,6 +198,68 @@ describe("MigrationGenerator", () => {
     expect(code).toContain('dropTable("users")')
     expect(code).toContain('dropTable("posts")')
     expect(code).toContain('dropTable("comments")')
+
+    // Verify ifNotExists is generated
+    expect(code).toContain('.ifNotExists()')
+  })
+
+  it("generates ifNotExists on createTable", () => {
+    const peta = new Peta({ dialect: new BunSqliteDialect({ database: new Database(":memory:") }) })
+    peta.registerAll(User, Post)
+    const gen = new MigrationGenerator()
+    const code = gen.generateInitialMigration(peta.models)
+
+    // Every createTable should have ifNotExists
+    const matches = code.match(/createTable/g)
+    const ifNotExistsMatches = code.match(/ifNotExists\(\)/g)
+    expect(matches?.length).toBe(ifNotExistsMatches?.length)
+  })
+
+  it("warns when ManyToMany pivot table has no registered model", () => {
+    class Tag extends Model {
+      static override table = "tags"
+      static override columns = { id: t.integer().primaryKey(), name: t.string(255) }
+    }
+
+    class PostWithTags extends Model {
+      static override table = "posts"
+      static override columns = { id: t.integer().primaryKey(), title: t.string(255) }
+      static override relations = { tags: new ManyToMany(() => Tag, { through: "post_tags", foreignPivotKey: "postId", relatedPivotKey: "tagId" }) }
+    }
+
+    const peta = new Peta({ dialect: new BunSqliteDialect({ database: new Database(":memory:") }) })
+    peta.registerAll(PostWithTags, Tag)
+    const gen = new MigrationGenerator()
+    const code = gen.generateInitialMigration(peta.models)
+
+    expect(code).toContain("no model is registered for it")
+    expect(code).toContain("post_tags")
+  })
+
+  it("suppresses warning when pivot model is registered", () => {
+    class Tag extends Model {
+      static override table = "tags"
+      static override columns = { id: t.integer().primaryKey(), name: t.string(255) }
+    }
+
+    class PostWithTags extends Model {
+      static override table = "posts"
+      static override columns = { id: t.integer().primaryKey(), title: t.string(255) }
+      static override relations = { tags: new ManyToMany(() => Tag, { through: "post_tags", foreignPivotKey: "postId", relatedPivotKey: "tagId" }) }
+    }
+
+    class PostTag extends Model {
+      static override table = "post_tags"
+      static override columns = { id: t.integer().primaryKey(), postId: t.integer().references(() => PostWithTags, ["id"]), tagId: t.integer().references(() => Tag, ["id"]) }
+    }
+
+    const peta = new Peta({ dialect: new BunSqliteDialect({ database: new Database(":memory:") }) })
+    peta.registerAll(PostWithTags, Tag, PostTag)
+    const gen = new MigrationGenerator()
+    const code = gen.generateInitialMigration(peta.models)
+
+    expect(code).not.toContain("no model is registered for it")
+    expect(code).toContain('createTable("post_tags")')
   })
 
   it("generated migration is syntactically valid when run", async () => {

@@ -1,6 +1,7 @@
-import type { ColumnShape } from "../columns/column"
 import { Column } from "../columns/column"
+import type { ColumnShape } from "../columns/column"
 import type { ModelClass } from "../model/model"
+import { ManyToMany } from "../relations/relation"
 
 export interface GeneratorOptions {
   name?: string
@@ -12,6 +13,9 @@ export class MigrationGenerator {
     const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, "").slice(0, 14)
     const parts: string[] = []
     const indexParts: string[] = []
+    const warnings: string[] = []
+
+    const registeredTables = new Set([...models.values()].map((m) => m.table).filter(Boolean))
 
     for (const [, modelClass] of models) {
       const table = modelClass.table
@@ -25,6 +29,21 @@ export class MigrationGenerator {
           indexParts.push(this.#generateCreateIndex(table, colName))
         }
       }
+
+      // Warn about ManyToMany pivot tables without a registered model
+      for (const [relName, rel] of Object.entries(modelClass.relations ?? {})) {
+        if (rel instanceof ManyToMany) {
+          const through = rel.throughTable
+          if (!registeredTables.has(through)) {
+            warnings.push(
+              `// ⚠ Detected ManyToMany "${modelClass.name}.${relName}" references table "${through}" ` +
+                `but no model is registered for it.\n` +
+                `//   Add a model class with static override table = "${through}" to include the pivot ` +
+                `table in the generated migration.`,
+            )
+          }
+        }
+      }
     }
 
     const upBody = [...parts, ...indexParts].join("\n\n")
@@ -32,11 +51,13 @@ export class MigrationGenerator {
       .filter((m) => m.table)
       .map((m) => `  await db.schema.dropTable("${m.table}").ifExists().execute()`)
 
+    const warningBlock = warnings.length > 0 ? `  // Warnings:\n${warnings.join("\n")}\n\n` : ""
+
     return `import type { Kysely } from "kysely"
 import { sql } from "kysely"
 
 export async function up(db: Kysely<any>): Promise<void> {
-${upBody}
+${warningBlock}${upBody}
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
@@ -47,7 +68,7 @@ ${downTables.join("\n")}
 
   #generateCreateTable(table: string, columns: ColumnShape): string {
     const lines: string[] = []
-    lines.push(`  await db.schema.createTable("${table}")`)
+    lines.push(`  await db.schema.createTable("${table}").ifNotExists()`)
 
     for (const [name, col] of Object.entries(columns)) {
       const typeSql = this.#mapType(col)
