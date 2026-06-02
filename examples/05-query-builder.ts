@@ -1,5 +1,5 @@
 // Peta ORM — 05-query-builder
-// where, orderBy, limit, offset, innerJoin, has, whereHas, whereDoesntHave, count
+// where, orderBy, limit, offset, innerJoin, has, whereHas, whereDoesntHave, when/unless, count
 
 import { Database } from "bun:sqlite"
 import { BunSqliteDialect } from "kysely-bun-sqlite"
@@ -72,5 +72,14 @@ console.log("Total posts:", total)
 // innerJoin
 const usersWithPosts = await User.query().innerJoin("posts", "posts.userId", "users.id").selectAll("users").execute()
 console.log("Users via join:", usersWithPosts.length)
+
+// when / unless — conditional chaining
+const sortParam = "name"
+const result = await User.query()
+  .where("name", "!=", "")
+  .when(sortParam, (q) => q.orderBy(sortParam, "asc"))
+  .unless(sortParam, (q) => q.orderBy("id", "asc"))
+  .execute()
+console.log("when/unless sort:", result.map((u: any) => u.get("name")))
 
 await peta.destroy()

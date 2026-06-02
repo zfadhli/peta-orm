@@ -42,6 +42,16 @@ export class ModelQueryBuilder<T extends Model> {
     return this
   }
 
+  when(condition: unknown, callback: (q: this) => this): this {
+    if (condition) return callback(this)
+    return this
+  }
+
+  unless(condition: unknown, callback: (q: this) => this): this {
+    if (!condition) return callback(this)
+    return this
+  }
+
   async execute(): Promise<T[]> {
     const scopes = this.#modelClass.getGlobalScopes?.()
     if (scopes) {
