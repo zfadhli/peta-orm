@@ -46,6 +46,27 @@ export class MorphTo extends BelongsTo {
 
   override match(_models: Model[], _results: Model[], _relationName: string): void {}
 
+  override async loadEager(models: Model[], relationName: string, _constraints?: ((qb: ModelQueryBuilder<any>) => void) | null): Promise<void> {
+    const groups = new Map<string, Model[]>()
+    for (const m of models) {
+      const type = m.get(this.morphType) as string | undefined
+      if (!type) continue
+      if (!groups.has(type)) groups.set(type, [])
+      groups.get(type)!.push(m)
+    }
+    for (const [typeName, group] of groups) {
+      const targetClass = this.#resolveType(typeName)
+      if (!targetClass) continue
+      const ids = group.map((m) => m.get(this.morphId)).filter((id) => id != null)
+      if (ids.length === 0) continue
+      const results = await targetClass.query().whereIn("id", ids).execute()
+      for (const m of group) {
+        const id = m.get(this.morphId)
+        m.$setRelation(relationName, results.find((r) => r.get("id") === id) ?? null)
+      }
+    }
+  }
+
   override async getResults(parent: Model): Promise<Model | null> {
     const type = parent.get(this.morphType) as string
     const modelClass = this.#resolveType(type)

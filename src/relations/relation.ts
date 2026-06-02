@@ -63,6 +63,14 @@ export abstract class Relation<TRelated extends Model = Model> {
   abstract addEagerConstraints(query: ModelQueryBuilder<TRelated>, models: Model[]): void
   abstract match(models: Model[], results: Model[], relationName: string): void
   abstract getResults(parent: Model): Promise<Model | Model[] | null>
+
+  async loadEager(models: Model[], relationName: string, constraints?: ((qb: ModelQueryBuilder<any>) => void) | null): Promise<void> {
+    const qb = this.relatedModelClass.query()
+    this.addEagerConstraints(qb, models)
+    if (constraints) constraints(qb)
+    const results = await qb.execute()
+    this.match(models, results, relationName)
+  }
 }
 
 export class HasMany<TRelated extends Model = Model> extends Relation<TRelated> {

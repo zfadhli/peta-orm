@@ -55,11 +55,6 @@ export class EagerLoader {
     const relation = modelClass.relations[name]
     if (!relation) throw new RelationNotFoundError(modelClass.table, name)
 
-    const qb = relation.relatedModelClass.query()
-    relation.addEagerConstraints(qb, models)
-    if (constraints) constraints(qb)
-
-    const results = await qb.execute()
-    relation.match(models, results, name)
+    await relation.loadEager(models, name, constraints)
   }
 }
